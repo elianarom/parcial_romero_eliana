@@ -36,22 +36,20 @@ async function getCategoriaById(req, res) {
 }
 
 async function updateCategoria(req, res) {
-    const {id} = req.params;
-    const {name} = req.body;
+    const id = req.params.id;
+    const categoria = req.body;
     try {
-        const categoria = await Categoria.findById(id);
-        if(!categoria) {
+        const categoriaNew = await Herramienta.findByIdAndUpdate(id, categoria);
+        if(categoriaNew) {
+             res.status(200).json({msg:'Categoria editada con éxito.'});
+        } else {
             return res.status(404).json({msg:'Categoria no encontrada!'});
         }
-
-        categoria.name = name;
-
-        await categoria.save();
-        return res.status(200).json({msg:'Categoria editada con éxito.'});
     } catch(error) {
         console.error('Error al intentar editar la categoria.', error);
         res.status(500).json({ msg: 'Error al intentar editar la categoria.' });
     }
+    
 }
 
 async function deleteCategoria(req, res) {

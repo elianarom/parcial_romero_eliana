@@ -36,24 +36,20 @@ async function getHerramientaById(req, res) {
 }
 
 async function updateHerramienta(req, res) {
-    const {id} = req.params;
-    const {name,price,available} = req.body;
+    const id = req.params.id;
+    const herramienta = req.body;
     try {
-        const herramienta = await Herramienta.findById(id);
-        if(!herramienta) {
+        const herramientaNew = await Herramienta.findByIdAndUpdate(id, herramienta);
+        if(herramientaNew) {
+             res.status(200).json({msg:'Herramienta editada con éxito.'});
+        } else {
             return res.status(404).json({msg:'Herramienta no encontrada!'});
         }
-
-        herramienta.name = name;
-        herramienta.price = price;
-        herramienta.available = available;
-
-        await herramienta.save();
-        return res.status(200).json({msg:'Herramienta editada con éxito.'});
     } catch(error) {
         console.error('Error al intentar editar la herramienta.', error);
         res.status(500).json({ msg: 'Error al intentar editar la herramienta.' });
     }
+    
 }
 
 async function deleteHerramienta(req, res) {

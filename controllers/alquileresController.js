@@ -36,24 +36,20 @@ async function getAlquilerById(req, res) {
 }
 
 async function updateAlquiler(req, res) {
-    const {id} = req.params;
-    const {herramienta_alquilada, usuario, estado} = req.body;
+    const id = req.params.id;
+    const alquiler = req.body;
     try {
-        const alquiler = await Alquiler.findById(id);
-        if(!alquiler) {
-            return res.status(404).json({msg:'Alquiler no encontrada!'});
+        const alquilerNew = await Herramienta.findByIdAndUpdate(id, alquiler);
+        if(alquilerNew) {
+             res.status(200).json({msg:'Alquiler editado con éxito.'});
+        } else {
+            return res.status(404).json({msg:'alquiler no encontrado!'});
         }
-
-        alquiler.herramienta_alquilada = herramienta_alquilada;
-        alquiler.usuario = usuario;
-        alquiler.estado = estado;
-
-        await alquiler.save();
-        return res.status(200).json({msg:'Alquiler editada con éxito.'});
     } catch(error) {
         console.error('Error al intentar editar el alquiler.', error);
         res.status(500).json({ msg: 'Error al intentar editar el alquiler.' });
     }
+    
 }
 
 async function deleteAlquiler(req, res) {
