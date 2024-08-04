@@ -5,7 +5,7 @@ import {routerAPI} from './routes/index.js';
 const app = express();
 const port = 3000;
 
-mongoose.connect('mongodb://localhost:27017/apiHerramientas', {useNewUrlParser: true, useUnifiedTopology: true});
+mongoose.connect('mongodb://localhost:27017/apiPost', {useNewUrlParser: true, useUnifiedTopology: true});
 
 const db = mongoose.connection;
 db.on('error', console.error.bind(console, 'Error de conexión a MongoDB: '));
@@ -16,7 +16,7 @@ db.once('open', () => {
 app.use(express.json());
 
 app.get('/', (req,res) => {
-    res.status(200).send('Crud de herramientas');
+    res.status(200).send('Crud Posts');
 })
 
 routerAPI(app);

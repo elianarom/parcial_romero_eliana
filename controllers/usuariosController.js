@@ -1,15 +1,59 @@
 import Usuario from "../models/usuarioModel.js";
+import bcrypt from 'bcryptjs';
+import { createAccessToken } from "../jwt/jwt.js";
 
 async function createUsuario(req, res) {
+    const { username, email, password } = req.body;
     try {
-        const nuevoUsuario = new Usuario(req.body);
-        await nuevoUsuario.save();
+        const passwordHash = await bcrypt.hash(password, 10)
+        
+        const nuevoUsuario = new Usuario({
+            username,
+            email,
+            password: passwordHash
+    });
 
-        res.status(200).json({nuevoUsuario});
+        const usuarioGuardado = await nuevoUsuario.save();
+        const token = await createAccessToken({id: usuarioGuardado._id})
+        res.cookie('token', token)
+        res.json({
+            id: usuarioGuardado._id,
+            username: usuarioGuardado.username,
+            email: usuarioGuardado.email
+        });
     } catch (error) {
         console.error(error);
-        res.status(500).json({msg: error, data: []})
+        res.status(500).json({message: error.message})
     }
+}
+
+async function login(req, res) {
+    const { email, password } = req.body;
+    try {
+        const usuarioEncontrado = await Usuario.findOne({email});
+
+        if(!usuarioEncontrado) return res.status(400).json({ message: 'Usuario no encontrado.'})
+        const coincide = await bcrypt.compare(password, usuarioEncontrado.password)
+        if(!coincide) return res.status(400).json({ message: 'Credenciales incorrectas.'})
+
+        const token = await createAccessToken({id: usuarioEncontrado._id})
+        res.cookie('token', token)
+        res.json({
+            id: usuarioEncontrado._id,
+            username: usuarioEncontrado.username,
+            email: usuarioEncontrado.email
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({message: error.message})
+    }
+}
+
+async function logout(req, res) {
+    res.cookie('token', '', {
+        expires: new Date(0)
+    })
+    return res.sendStatus(200);
 }
 
 async function getUsuarios(req, res) {
@@ -67,4 +111,4 @@ async function deleteUsuario(req, res) {
     }
 }
 
-export {createUsuario, getUsuarios, getUsuarioById, updateUsuario, deleteUsuario}
+export {createUsuario, getUsuarios, getUsuarioById, updateUsuario, deleteUsuario, login, logout}
