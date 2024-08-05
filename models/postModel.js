@@ -17,10 +17,6 @@ const postSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Usuario',
         required: true,
-    },
-    categoria: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Categoria'
     }
 });
 

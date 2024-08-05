@@ -1,15 +1,17 @@
 import express from 'express';
-import { getUsuarios, getUsuarioById, createUsuario, updateUsuario, deleteUsuario, login, logout} from '../controllers/usuariosController.js';
+import { getUsuarios, perfil, createUsuario, login, logout, verificar} from '../controllers/usuariosController.js';
 const router = express.Router();
+import { autenticar } from '../middlewares/autenticacion.js'
+import { validar } from '../middlewares/validacion.middleware.js';
+import { registroValidacion, loginValidacion } from '../validaciones/usuario.validacion.js';
 
 router.use(express.json());
 
 router.get('/', getUsuarios);
-router.post('/login', login);
-router.post('/logout', logout)
-router.get('/:id', getUsuarioById)
-router.post('/', createUsuario);
-router.put('/:id', updateUsuario);
-router.delete('/:id', deleteUsuario);
+router.post('/login', validar(loginValidacion),login);
+router.post('/logout', logout);
+router.get('/perfil', autenticar, perfil);
+router.post('/', validar(registroValidacion), createUsuario);
+router.get('/verificar', verificar)
 
 export default router;

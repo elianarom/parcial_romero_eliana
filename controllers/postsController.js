@@ -1,22 +1,27 @@
 import Post from "../models/postModel.js";
 
-async function createPost(req, res) {
+async function getPosts(req, res) {
     try {
-        const nuevoPost = new Post(req.body);
-        await nuevoPost.save();
-
-        res.status(200).json({nuevoPost});
+        const posts = await Post.find({
+            usuario: req.usuario.id
+        });
+        res.json(posts)
     } catch (error) {
-        console.error(error);
         res.status(500).json({msg: error, data: []})
     }
 }
 
-async function getPosts(req, res) {
+async function createPost(req, res) {
+    const { title, description, date } = req.body;
+
     try {
-        const posts = await Post.find();
-        res.status(200).json({msg: 'ok', data: posts});
+        const nuevoPost = new Post({
+            title, description, date, usuario: req.usuario.id
+        });
+        const postguardado = await nuevoPost.save();
+        res.status(200).json({nuevoPost});
     } catch (error) {
+        console.error(error);
         res.status(500).json({msg: error, data: []})
     }
 }
@@ -39,7 +44,8 @@ async function updatePost(req, res) {
     const id = req.params.id;
     const post = req.body;
     try {
-        const postNew = await Post.findByIdAndUpdate(id, post);
+        const postNew = await Post.findByIdAndUpdate(id, post, {new: true});
+
         if(postNew) {
              res.status(200).json({msg:'Post editado con éxito.'});
         } else {

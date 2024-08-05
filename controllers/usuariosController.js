@@ -1,10 +1,15 @@
 import Usuario from "../models/usuarioModel.js";
 import bcrypt from 'bcryptjs';
 import { createAccessToken } from "../jwt/jwt.js";
+import jwt from "jsonwebtoken";
+import { TOKEN_SECRET } from "../config.js";
 
 async function createUsuario(req, res) {
     const { username, email, password } = req.body;
     try {
+        const usuarioEncontrado = await Usuario.findOne({email});
+        if(usuarioEncontrado) return res.status(400).json(["El email ya existe, probá con uno diferente."]);
+
         const passwordHash = await bcrypt.hash(password, 10)
         
         const nuevoUsuario = new Usuario({
@@ -15,7 +20,7 @@ async function createUsuario(req, res) {
 
         const usuarioGuardado = await nuevoUsuario.save();
         const token = await createAccessToken({id: usuarioGuardado._id})
-        res.cookie('token', token)
+        res.cookie('token', token);
         res.json({
             id: usuarioGuardado._id,
             username: usuarioGuardado.username,
@@ -23,7 +28,7 @@ async function createUsuario(req, res) {
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({message: error.message})
+        res.status(500).json({msg: 'ok', message: error.message})
     }
 }
 
@@ -45,7 +50,7 @@ async function login(req, res) {
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({message: error.message})
+        res.status(500).json({msg: 'ok', message: error.message})
     }
 }
 
@@ -65,50 +70,34 @@ async function getUsuarios(req, res) {
     }
 }
 
-async function getUsuarioById(req, res) {
-    try {
-        const usuario = await Usuario.findById(req.params.id);
+async function perfil (req, res) {
+    const usuarioEncontrado = await Usuario.findById(req.usuario.id);
 
-        if(!usuario) {
-            return res.status(404).send('Usuario no encontrado.')
-        }
-        res.status(200).json(usuario)
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({msg: error, data: []})
-    }
+    if(!usuarioEncontrado) return res.status(400).json({ message: 'Usuario no encontrado'});
+    return res.json({
+        id: usuarioEncontrado._id,
+        username: usuarioEncontrado.email,
+        email: usuarioEncontrado.email
+    })
 }
 
-async function updateUsuario(req, res) {
-    const id = req.params.id;
-    const usuario = req.body;
-    try {
-        const usuarioNew = await Herramienta.findByIdAndUpdate(id, usuario);
-        if(usuarioNew) {
-             res.status(200).json({msg:'Usuario editado con éxito.'});
-        } else {
-            return res.status(404).json({msg:'Usuario no encontrado!'});
-        }
-    } catch(error) {
-        console.error('Error al intentar editar el usuario.', error);
-        res.status(500).json({ msg: 'Error al intentar editar el usuario.' });
-    }
-    
+const verificar = async (req, res) => {
+    const { token } = req.cookies;
+
+    if(!token) return res.status(401).json({message: "No estas autorizado."});
+
+    jwt.verify(token, TOKEN_SECRET, async (err, usuario) => {
+        if(err) return res.status(401).json({message: "No estas autorizado."})
+            
+        const usuarioEncontrado = await Usuario.findById(usuario.id);
+        if(!usuarioEncontrado) return res.status(401).json({message: "No estas autorizado."});
+
+        return res.json({
+            id: usuarioEncontrado._id,
+            username: usuarioEncontrado.username,
+            email: usuarioEncontrado.email
+        });
+    });
 }
 
-async function deleteUsuario(req, res) {
-    const usuarioId = req.params.id;
-    try {
-        const usuario = await Usuario.findById(usuarioId);
-        if(!usuario) {
-            return res.status(404).json({msg:'Usuario no encontrado!'});
-        }
-        await Usuario.findByIdAndDelete(usuarioId);
-        return res.status(200).json({msg:'Usuario eliminado con éxito.'});
-    } catch(error) {
-        console.error('Error al intentar eliminar al usuario.', error);
-        res.status(500).json({ message: 'Error al intentar eliminar al usuario.' });
-    }
-}
-
-export {createUsuario, getUsuarios, getUsuarioById, updateUsuario, deleteUsuario, login, logout}
+export {createUsuario, getUsuarios, perfil, login, logout, verificar}
